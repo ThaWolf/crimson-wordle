@@ -10,7 +10,10 @@ export const gameDictionary = {
   "VELKYN": "SOMBRA",
   "DRAKE": "FIELES",
   "JHAL": "ESPERAN",
-  "KORTHANE": "SEÑAL"
+  "KORTHANE": "SEÑAL",
+  "GETHICATH": "MALDICIÓN",
+  "KORTH": "VELO",
+  "VAERGAUN": "CARMESÍ"
 };
 
 // Persistent data structure to track failed attempts for each word
