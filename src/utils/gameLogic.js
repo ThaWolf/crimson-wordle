@@ -41,14 +41,20 @@ export const evaluateGuess = (guess, targetWord) => {
   };
 };
 
+// Calculate max attempts based on word length
+export const calculateMaxAttempts = (wordLength) => {
+  return Math.max(4, Math.ceil(wordLength * 1.3));
+};
+
 // Check if the game is won
 export const isGameWon = (guess, targetWord) => {
   return guess.toUpperCase() === targetWord.toUpperCase();
 };
 
-// Check if the game is over (6 attempts reached)
-export const isGameOver = (attempts) => {
-  return attempts >= 6;
+// Check if the game is over (dynamic attempts based on word length)
+export const isGameOver = (attempts, wordLength) => {
+  const maxAttempts = calculateMaxAttempts(wordLength);
+  return attempts >= maxAttempts;
 };
 
 // Validate input (must match target word length, alphabetic only)
@@ -64,11 +70,12 @@ export const formatInput = (input) => {
 
 // Calculate game statistics
 export const calculateStats = (attempts, won, targetWord) => {
+  const maxAttempts = calculateMaxAttempts(targetWord.length);
   return {
     attempts,
     won,
     targetWord,
     timestamp: new Date().toISOString(),
-    score: won ? (7 - attempts) : 0 // Higher score for fewer attempts
+    score: won ? (maxAttempts + 1 - attempts) : 0 // Dynamic scoring based on word length
   };
 };

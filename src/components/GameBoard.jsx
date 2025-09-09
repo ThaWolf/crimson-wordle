@@ -1,7 +1,6 @@
 import React from 'react';
 
-const GameBoard = ({ guesses, currentGuess, attempts, targetWord }) => {
-  const maxAttempts = 6;
+const GameBoard = ({ guesses, currentGuess, attempts, targetWord, maxAttempts }) => {
   const wordLength = targetWord.length;
 
   // Create empty rows for remaining attempts
@@ -48,19 +47,26 @@ const GameBoard = ({ guesses, currentGuess, attempts, targetWord }) => {
 
       {/* Submitted Guesses List - Below the form */}
       <div className="w-80 space-y-2">
-        {guesses.map((evaluation, index) => (
-          <div 
-            key={index}
-            className="bg-gray-800 border-2 border-yellow-500 rounded-lg p-3 flex justify-between items-center"
-          >
-            <span className="text-white font-mono text-lg font-bold">
-              {evaluation.guess}
-            </span>
-            <div className="flex items-center">
-              {createFeedbackSymbols(evaluation)}
+        {guesses.map((evaluation, index) => {
+          const remainingAttempts = maxAttempts - (index + 1);
+          return (
+            <div key={index} className="flex items-center space-x-3">
+              <div 
+                className="bg-gray-800 border-2 border-yellow-500 rounded-lg p-3 flex justify-between items-center flex-1"
+              >
+                <span className="text-white font-mono text-lg font-bold">
+                  {evaluation.guess}
+                </span>
+                <div className="flex items-center">
+                  {createFeedbackSymbols(evaluation)}
+                </div>
+              </div>
+              <div className="text-red-600 remaining text-lg font-mono font-bold pl-1">
+                {remainingAttempts}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,10 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import './index.css'
 import { useGameState } from './hooks/useGameState'
 import GameBoard from './components/GameBoard'
 import ResultsDisplay from './components/ResultsDisplay'
+import TextGamePage from './pages/TextGamePage'
+import CryptexGamePage from './pages/CryptexGamePage'
 
 function App() {
+  const [inputMethod, setInputMethod] = useState('cryptex'); // Default to cryptex
+  
   const {
     gameState,
     playerName,
@@ -20,13 +24,24 @@ function App() {
     resetGame,
     setCurrentGuess,
     canSubmit,
-    handleKeyPress
+    handleKeyPress,
+    maxAttempts,
+    clearError
   } = useGameState()
+
+  const [playerNameInput, setPlayerNameInput] = useState('');
 
   const handleNameInput = (e) => {
     const name = e.target.value.trim()
+    
+    // Clear error message when user starts typing
+    if (errorMessage) {
+      clearError()
+    }
+    
     if (name && e.key === 'Enter') {
-      startGame(name)
+      setPlayerNameInput(name)
+      startGame(name) // Directly start game with cryptex
     }
   }
 
@@ -37,70 +52,65 @@ function App() {
     }
   }
 
+  const toggleInputMethod = () => {
+    setInputMethod(inputMethod === 'cryptex' ? 'text' : 'cryptex')
+  }
+
+
   // Landing Page - Ultra Minimalist
   if (gameState === 'landing') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <input
-          type="text"
-          className="minimal-input"
-          onKeyPress={handleNameInput}
-          autoFocus
-        />
-      </div>
-    )
-  }
-
-  // Game Page
-  if (gameState === 'playing') {
-    return (
-      <div className="min-h-screen bg-black flex flex-col p-4">
-        <div className="w-full max-w-2xl mx-auto">
-          {/* Error Message */}
+        <div className="flex flex-col items-center space-y-4">
           {errorMessage && (
-            <div className="bg-red-900/80 border border-red-600 text-red-100 px-4 py-3 rounded-lg mb-4 text-center">
+            <div 
+              className="bg-red-900/80 border border-red-600 text-red-100 px-4 py-3 rounded-lg text-center max-w-md cursor-pointer hover:bg-red-800/80 transition-colors"
+              onClick={clearError}
+              title="Click to dismiss"
+            >
               <span className="flex items-center justify-center space-x-2">
                 <span>⚠️</span>
                 <span>{errorMessage}</span>
               </span>
             </div>
           )}
-
-          {/* Game Board - Image at top, guesses list below */}
-          <GameBoard
-            guesses={guesses}
-            currentGuess={currentGuess}
-            attempts={attempts}
-            targetWord={targetWord}
+          <input
+            type="text"
+            className="minimal-input"
+            placeholder="Enter Word"
+            onKeyPress={handleNameInput}
+            autoFocus
           />
-
-          {/* Input Form - In the middle */}
-          <div className="mt-8 mb-8">
-            <form onSubmit={handleGuessSubmit} className="flex flex-col items-center space-y-4">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={currentGuess}
-                  onChange={(e) => setCurrentGuess(e.target.value.toUpperCase())}
-                  onKeyPress={handleKeyPress}
-                  className="input-field text-center gap text-lg w-64"
-                  maxLength={targetWord.length}
-                  autoFocus
-                />
-              </div>
-              
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ♢
-              </button>
-            </form>
-          </div>
         </div>
       </div>
     )
+  }
+
+  // Game Page - Route to appropriate input method
+  if (gameState === 'playing') {
+    const gameProps = {
+      gameState,
+      playerName,
+      targetWord,
+      currentGuess,
+      guesses,
+      attempts,
+      gameWon,
+      gameStats,
+      errorMessage,
+      submitGuess,
+      resetGame,
+      setCurrentGuess,
+      canSubmit,
+      handleKeyPress,
+      maxAttempts,
+      inputMethod,
+      toggleInputMethod
+    };
+
+    return inputMethod === 'text' ? 
+      <TextGamePage {...gameProps} /> : 
+      <CryptexGamePage {...gameProps} />;
   }
 
   // Results Page

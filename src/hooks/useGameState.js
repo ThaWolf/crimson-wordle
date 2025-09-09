@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { validateName, removeName, assignWordToPlayer, incrementFailedAttempts } from '../data/words';
-import { evaluateGuess, isGameWon, isGameOver, validateInput, formatInput, calculateStats } from '../utils/gameLogic';
+import { validateName, removeName, assignWordToPlayer, incrementFailedAttempts, markWordAsCompleted, markWordAsFailed, markWordAsAttempted } from '../data/words';
+import { evaluateGuess, isGameWon, isGameOver, validateInput, formatInput, calculateStats, calculateMaxAttempts } from '../utils/gameLogic';
 
 export const useGameState = () => {
   const [gameState, setGameState] = useState('landing'); // 'landing', 'playing', 'results'
@@ -16,41 +16,51 @@ export const useGameState = () => {
   // Initialize game for a player
   const startGame = (name) => {
     if (!validateName(name)) {
-      setErrorMessage('Character name not found in campaign roster.');
+      setErrorMessage('Word was not recognized.');
       return false;
     }
 
-    const word = assignWordToPlayer(name);
-    if (!word) {
-      setErrorMessage('Unable to assign word to character. Please try again.');
+    try {
+      const word = assignWordToPlayer(name);
+      if (!word) {
+        setErrorMessage('Unable to assign word. Please try again.');
+        return false;
+      }
+
+      setPlayerName(name);
+      setTargetWord(word);
+      setGameState('playing');
+      setCurrentGuess('');
+      setGuesses([]);
+      setAttempts(0);
+      setGameWon(false);
+      setGameStats(null);
+      setErrorMessage('');
+      
+      // Mark word as attempted
+      markWordAsAttempted(word);
+      
+      return true;
+    } catch (error) {
+      setErrorMessage(error.message);
       return false;
     }
-
-    setPlayerName(name);
-    setTargetWord(word);
-    setGameState('playing');
-    setCurrentGuess('');
-    setGuesses([]);
-    setAttempts(0);
-    setGameWon(false);
-    setGameStats(null);
-    setErrorMessage('');
-    
-    return true;
   };
 
   // Submit a guess
-  const submitGuess = () => {
-    if (!validateInput(currentGuess, targetWord)) {
+  const submitGuess = (word = null) => {
+    const guessToUse = word || currentGuess;
+    
+    if (!validateInput(guessToUse, targetWord)) {
       setErrorMessage(`Please enter exactly ${targetWord.length} letters.`);
       return;
     }
 
-    const formattedGuess = formatInput(currentGuess);
+    const formattedGuess = formatInput(guessToUse);
     const evaluation = evaluateGuess(formattedGuess, targetWord);
     const won = isGameWon(formattedGuess, targetWord);
     const newAttempts = attempts + 1;
-    const over = isGameOver(newAttempts);
+    const over = isGameOver(newAttempts, targetWord.length);
 
     const newGuesses = [...guesses, evaluation];
     
@@ -61,8 +71,9 @@ export const useGameState = () => {
     setErrorMessage('');
 
     if (won || over) {
-      // If game is lost, increment failed attempts for the word
+      // If game is lost, mark word as failed and increment failed attempts
       if (!won) {
+        markWordAsFailed(targetWord);
         incrementFailedAttempts(targetWord);
         // On failure, go directly back to landing without showing results
         setGameState('landing');
@@ -77,7 +88,8 @@ export const useGameState = () => {
         return;
       }
       
-      // If won, show results page
+      // If won, mark word as completed and show results page
+      markWordAsCompleted(targetWord);
       const stats = calculateStats(newAttempts, won, targetWord);
       setGameStats(stats);
       setGameState('results');
@@ -95,6 +107,11 @@ export const useGameState = () => {
     }
   };
 
+  // Clear error message
+  const clearError = () => {
+    setErrorMessage('');
+  };
+
   // Reset game and return to landing
   const resetGame = () => {
     setGameState('landing');
@@ -110,6 +127,7 @@ export const useGameState = () => {
 
   // Computed values
   const canSubmit = currentGuess.length === targetWord.length && gameState === 'playing';
+  const maxAttempts = targetWord ? calculateMaxAttempts(targetWord.length) : 6;
 
   return {
     // State
@@ -129,9 +147,11 @@ export const useGameState = () => {
     handleKeyPress,
     resetGame,
     setCurrentGuess,
+    clearError,
     
     // Computed values
-    isGameOver: isGameOver(attempts),
+    maxAttempts,
+    isGameOver: isGameOver(attempts, targetWord.length),
     canSubmit
   };
 };
